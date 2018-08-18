@@ -3,10 +3,11 @@ package calc
 import (
 	"context"
 	"fmt"
+	"os"
 	"net/http"
 	"strings"
 	"sync"
-
+	"encoding/json"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 )
@@ -57,7 +58,7 @@ func (cmd Cmd) Run() error {
 		wg.Add(1)
 		go func(val Repository) {
 			if cmd.Debug {
-				fmt.Printf("Executing goroutine for value: %s", val.Name)
+				fmt.Printf("Executing goroutine for value: %s\n", val.Name)
 			}
 			pullRequests, err := getPullRequests(ctx, client, val)
 			c <- Result{PullRequests: pullRequests, Err: err}
@@ -92,8 +93,10 @@ func (cmd Cmd) Run() error {
 			delta := pullRequest.GetMergedAt().Sub(pullRequest.GetCreatedAt()).Hours()
 			timeAccumulator += delta
 			if cmd.Debug {
-				fmt.Printf("PR: %s\nCreated at: %v\nMerged at:%v\nDelta in hours: %f\n", pullRequest.GetTitle(), pullRequest.GetCreatedAt(), pullRequest.GetMergedAt(), delta)
+				fmt.Printf("PR:%s Created:%v Merged:%v Delta:%f\n", pullRequest.GetTitle(), pullRequest.GetCreatedAt(), pullRequest.GetMergedAt(), delta)
 			}
+			b,_ := json.Marshal(pullRequest)
+			fmt.Fprintf(os.Stderr,"%s\n", string(b))
 		}
 	}
 
